@@ -33,9 +33,10 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>(() => {
     const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
     return {
       isAuthenticated: !!token,
-      user: null,
+      user: userStr ? JSON.parse(userStr) : null,
     };
   });
 
@@ -139,20 +140,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     const token = localStorage.getItem("token");
-    if (token && !authState.user) {
+    const userStr = localStorage.getItem("user");
+    if (token && userStr) {
       try {
-        const response = await ApiService.getMe();
+        const user = JSON.parse(userStr);
         setAuthState({
           isAuthenticated: true,
-          user: response.data,
+          user,
         });
-      } catch (error) {
+        // Optionally, validate token with backend here
+        // If you want, you can call ApiService.getMe() and update user
+      } catch {
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
         setAuthState({
           isAuthenticated: false,
           user: null,
         });
       }
+    } else {
+      setAuthState({
+        isAuthenticated: false,
+        user: null,
+      });
     }
   };
 

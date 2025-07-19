@@ -53,6 +53,12 @@ const ProtectedDashboard: React.FC<{ children: React.ReactNode }> = ({
   return <>{children}</>;
 };
 
+// Public Route Component
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
+};
+
 // App Routes Component
 const AppRoutes: React.FC = () => {
   const { checkAuthStatus } = useAuth();
@@ -67,8 +73,22 @@ const AppRoutes: React.FC = () => {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <PublicRoute>
+                <Signup />
+              </PublicRoute>
+            }
+          />
 
           {/* Protected Routes */}
           <Route
