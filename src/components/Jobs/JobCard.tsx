@@ -1,6 +1,6 @@
-import React from 'react';
-import { Job } from '../../types';
-import { MapPin, Clock, DollarSign, Users } from 'lucide-react';
+import React from "react";
+import { Job } from "../../types";
+import { MapPin, Clock, DollarSign, Users } from "lucide-react";
 
 interface JobCardProps {
   job: Job;
@@ -8,12 +8,18 @@ interface JobCardProps {
   showApplyButton?: boolean;
 }
 
-const JobCard: React.FC<JobCardProps> = ({ job, onApply, showApplyButton = true }) => {
+const JobCard: React.FC<JobCardProps> = ({
+  job,
+  onApply,
+  showApplyButton = true,
+}) => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">{job.title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            {job.title}
+          </h3>
           <p className="text-sm text-gray-600">{job.providerName}</p>
         </div>
         <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
@@ -33,8 +39,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply, showApplyButton = true 
           {job.duration}
         </div>
         <div className="flex items-center text-sm text-gray-600">
-          <DollarSign className="h-4 w-4 mr-1" />
-          ${job.payment}
+          <DollarSign className="h-4 w-4 mr-1" />${job.payment}
         </div>
         <div className="flex items-center text-sm text-gray-600">
           <Users className="h-4 w-4 mr-1" />
@@ -44,7 +49,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onApply, showApplyButton = true 
 
       {showApplyButton && onApply && (
         <button
-          onClick={() => onApply(job.id)}
+          onClick={() => onApply(job._id)}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
         >
           Apply Now

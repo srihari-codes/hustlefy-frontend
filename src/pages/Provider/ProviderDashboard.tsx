@@ -29,12 +29,12 @@ const ProviderDashboard: React.FC = () => {
       for (const job of jobsResponse.data) {
         try {
           const applicationsResponse = await ApiService.getJobApplicants(
-            job.id
+            job._id // <-- Correct property
           );
           allApplications.push(...applicationsResponse.data);
         } catch (error) {
           console.error(
-            `Error fetching applications for job ${job.id}:`,
+            `Error fetching applications for job ${job._id}:`,
             error
           );
         }
@@ -52,7 +52,7 @@ const ProviderDashboard: React.FC = () => {
     action: "accept" | "reject"
   ) => {
     try {
-      const application = applications.find((app) => app.id === applicationId);
+      const application = applications.find((app) => app._id === applicationId);
       if (!application) return;
 
       if (action === "accept") {
@@ -157,9 +157,9 @@ const ProviderDashboard: React.FC = () => {
           </div>
           <div className="divide-y divide-gray-200">
             {pendingApplications.map((application) => {
-              const job = jobs.find((j) => j.id === application.jobId);
+              const job = jobs.find((j) => j._id === application.jobId);
               return (
-                <div key={application.id} className="p-6">
+                <div key={application._id} className="p-6">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="text-lg font-medium text-gray-900">
@@ -185,7 +185,7 @@ const ProviderDashboard: React.FC = () => {
                     <div className="ml-6 flex space-x-3">
                       <button
                         onClick={() =>
-                          handleApplicationAction(application.id, "accept")
+                          handleApplicationAction(application._id, "accept")
                         }
                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-1"
                       >
@@ -194,7 +194,7 @@ const ProviderDashboard: React.FC = () => {
                       </button>
                       <button
                         onClick={() =>
-                          handleApplicationAction(application.id, "reject")
+                          handleApplicationAction(application._id, "reject")
                         }
                         className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-1"
                       >
@@ -233,7 +233,7 @@ const ProviderDashboard: React.FC = () => {
         ) : (
           <div className="divide-y divide-gray-200">
             {activeJobs.map((job) => (
-              <div key={job.id} className="p-6">
+              <div key={job._id} className="p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-lg font-medium text-gray-900">

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Job } from '../../types';
-import JobCard from './JobCard';
+import React from "react";
+import { Job } from "../../types";
+import JobCard from "./JobCard";
 
 interface JobListProps {
   jobs: Job[];
@@ -9,11 +9,11 @@ interface JobListProps {
   emptyMessage?: string;
 }
 
-const JobList: React.FC<JobListProps> = ({ 
-  jobs, 
-  onApply, 
+const JobList: React.FC<JobListProps> = ({
+  jobs,
+  onApply,
   showApplyButton = true,
-  emptyMessage = "No jobs available at the moment." 
+  emptyMessage = "No jobs available at the moment.",
 }) => {
   if (jobs.length === 0) {
     return (
@@ -25,9 +25,9 @@ const JobList: React.FC<JobListProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {jobs.map(job => (
+      {jobs.map((job) => (
         <JobCard
-          key={job.id}
+          key={job._id}
           job={job}
           onApply={onApply}
           showApplyButton={showApplyButton}

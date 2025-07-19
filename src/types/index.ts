@@ -12,31 +12,50 @@ export interface User {
 }
 
 export interface Job {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   location: string;
+  category: string;
   peopleNeeded: number;
   peopleAccepted: number;
-  category: string;
   duration: string;
   payment: number;
-  providerId: string;
+  providerId?: {
+    _id: string;
+    name: string;
+    email: string;
+  } | null;
   providerName: string;
+  status: string;
+  acceptedUsers: any[];
   createdAt: string;
-  status: "open" | "fulfilled";
+  updatedAt: string;
+  __v: number;
 }
 
 export interface Application {
-  id: string;
+  _id: string; // <-- Use _id to match backend response
   jobId: string;
-  seekerId: string;
+  seekerId:
+    | string
+    | {
+        _id: string;
+        name: string;
+        email: string;
+        workCategories: string[];
+        bio: string;
+        location: string;
+        phone: string;
+      };
   seekerName: string;
   seekerBio: string;
   seekerCategories: string[];
   message: string;
   status: "pending" | "accepted" | "rejected";
-  appliedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  __v?: number;
 }
 
 export interface AuthState {
