@@ -1,53 +1,195 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { workCategories } from '../data/mockData';
-import { Briefcase, Mail, Lock, User, Phone, MapPin, FileText } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Briefcase, Mail, Lock, Shield, RefreshCw } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const Signup: React.FC = () => {
-  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-    location: '',
-    role: searchParams.get('role') || 'seeker',
-    workCategories: [] as string[],
-    bio: '',
+    email: "",
+    password: "",
+    confirmPassword: "",
+    otp: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { registerUser } = useAuth();
+  const [isSendingOTP, setIsSendingOTP] = useState(false);
+  const [error, setError] = useState("");
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0);
+
   const navigate = useNavigate();
+  const { login, loginWithGoogle } = useAuth();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  // Timer for OTP resend
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [otpTimer]);
 
-  const handleCategoryChange = (category: string) => {
-    setFormData(prev => ({
-      ...prev,
-      workCategories: prev.workCategories.includes(category)
-        ? prev.workCategories.filter(c => c !== category)
-        : [...prev.workCategories, category]
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  // Google Sign-In Button
+  const handleGoogleSignIn = async (credentialResponse: any) => {
+    setError("");
     setIsLoading(true);
 
     try {
-      await registerUser(formData);
-      navigate(formData.role === 'provider' ? '/provider/dashboard' : '/seeker/dashboard');
+      const response = await loginWithGoogle(credentialResponse.credential);
+      if (response?.isNewUser) {
+        navigate("/onboarding");
+      } else {
+        navigate(
+          response.user.role === "provider"
+            ? "/provider/dashboard"
+            : "/seeker/dashboard"
+        );
+      }
     } catch (error: any) {
-      setError(error.message || 'Registration failed. Please try again.');
+      setError(error.message || "Google sign-in failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: handleGoogleSignIn,
+      });
+
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-signin-button"),
+        {
+          theme: "outline",
+          size: "large",
+          width: "100%",
+          text: "signin_with",
+        }
+      );
+    }
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setError(""); // Clear error when user types
+  };
+
+  const sendOTP = async () => {
+    if (!formData.email) {
+      setError("Please enter your email address");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    setIsSendingOTP(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/send-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setShowOtp(true);
+        setOtpSent(true);
+        setOtpTimer(60); // 60 seconds countdown
+      } else {
+        setError(data.message || "Failed to send OTP. Please try again.");
+      }
+    } catch (error) {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setIsSendingOTP(false);
+    }
+  };
+
+  const verifyOTP = async () => {
+    if (!formData.otp || formData.otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          otp: formData.otp,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.user && data.token) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        if (login) {
+          login(data.user);
+        }
+        navigate("/onboarding");
+      } else {
+        setError(data.message || "Invalid OTP. Please try again.");
+      }
+    } catch (error) {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+
+    if (!showOtp) {
+      await sendOTP();
+    } else {
+      await verifyOTP();
+    }
+  };
+
+  const resendOTP = async () => {
+    if (otpTimer > 0) return;
+
+    setFormData((prev) => ({ ...prev, otp: "" }));
+    await sendOTP();
   };
 
   return (
@@ -56,203 +198,173 @@ const Signup: React.FC = () => {
         <div className="text-center">
           <Briefcase className="mx-auto h-12 w-12 text-blue-600" />
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Join QuickWork
+            Join Hustlefy
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Or{' '}
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+            Or{" "}
+            <Link
+              to="/login"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
               sign in to your existing account
             </Link>
           </p>
         </div>
 
         <div className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                 {error}
               </div>
             )}
 
-            {/* Role Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Account Type
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, role: 'seeker' }))}
-                  className={`p-3 border rounded-lg text-center transition-colors ${
-                    formData.role === 'seeker'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-medium">Job Seeker</div>
-                  <div className="text-xs text-gray-500">Find work</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, role: 'provider' }))}
-                  className={`p-3 border rounded-lg text-center transition-colors ${
-                    formData.role === 'provider'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-medium">Job Provider</div>
-                  <div className="text-xs text-gray-500">Post jobs</div>
-                </button>
-              </div>
+            {/* Google Sign-In Button */}
+            <div className="mb-6">
+              <div id="google-signin-button"></div>
             </div>
 
-            {/* Basic Info */}
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Full Name
-                </label>
-                <div className="mt-1 relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Your full name"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email Address
-                </label>
-                <div className="mt-1 relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="your@email.com"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <div className="mt-1 relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Create a password"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                  Phone Number
-                </label>
-                <div className="mt-1 relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="(555) 123-4567"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                  Location
-                </label>
-                <div className="mt-1 relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    id="location"
-                    name="location"
-                    type="text"
-                    required
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Your city or area"
-                  />
-                </div>
-              </div>
+            {/* OR Divider */}
+            <div className="flex items-center my-4">
+              <div className="flex-grow border-t border-gray-200"></div>
+              <span className="mx-4 text-gray-500 font-medium">or</span>
+              <div className="flex-grow border-t border-gray-200"></div>
             </div>
 
-            {/* Work Categories */}
+            {/* Email Sign-Up Fields */}
+            {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Work Categories (Select all that apply)
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {workCategories.map(category => (
-                  <label key={category} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.workCategories.includes(category)}
-                      onChange={() => handleCategoryChange(category)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{category}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Bio */}
-            <div>
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
-                Bio
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Email Address
               </label>
               <div className="mt-1 relative">
-                <FileText className="absolute left-3 top-3 text-gray-400 h-5 w-5" />
-                <textarea
-                  id="bio"
-                  name="bio"
-                  rows={3}
-                  value={formData.bio}
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
                   onChange={handleInputChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Tell us about yourself and your experience..."
+                  disabled={otpSent}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                  placeholder="your@email.com"
                 />
               </div>
             </div>
 
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <div className="mt-1 relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  disabled={otpSent}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                  placeholder="Create a password"
+                />
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Confirm Password
+              </label>
+              <div className="mt-1 relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  disabled={otpSent}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                  placeholder="Confirm your password"
+                />
+              </div>
+            </div>
+
+            {/* OTP Field - Only shows after OTP is sent */}
+            {showOtp && (
+              <div className="animate-pulse">
+                <label
+                  htmlFor="otp"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Email Verification Code
+                </label>
+                <div className="mt-1 relative">
+                  <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    required
+                    value={formData.otp}
+                    onChange={handleInputChange}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter 6-digit code"
+                    maxLength={6}
+                  />
+                </div>
+                <div className="mt-2 flex justify-between items-center">
+                  <p className="text-sm text-gray-600">
+                    Code sent to {formData.email}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={resendOTP}
+                    disabled={otpTimer > 0}
+                    className="text-sm text-blue-600 hover:text-blue-500 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {otpTimer > 0 ? `Resend in ${otpTimer}s` : "Resend Code"}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div>
               <button
-                type="submit"
-                disabled={isLoading}
+                type="button"
+                onClick={handleSubmit}
+                disabled={isLoading || isSendingOTP}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {isSendingOTP ? (
+                  <>
+                    <RefreshCw className="animate-spin h-4 w-4 mr-2" />
+                    Sending Code...
+                  </>
+                ) : isLoading ? (
+                  "Creating Account..."
+                ) : !showOtp ? (
+                  "Send Verification Code"
+                ) : (
+                  "Verify & Create Account"
+                )}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

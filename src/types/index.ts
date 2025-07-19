@@ -43,3 +43,10 @@ export interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
 }
+
+export interface GoogleLoginResponse {
+  user: User;
+  token: string;
+  isNewUser?: boolean;
+  message?: string;
+}
