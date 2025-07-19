@@ -55,17 +55,24 @@ const ProtectedDashboard: React.FC<{ children: React.ReactNode }> = ({
 
 // Public Route Component
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, isAuthLoading } = useAuth();
+  if (isAuthLoading) return <div>Loading...</div>;
+  if (isAuthenticated && !isOnboardingComplete(user))
+    return <Navigate to="/onboarding" replace />;
   return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
 };
 
 // App Routes Component
 const AppRoutes: React.FC = () => {
-  const { checkAuthStatus } = useAuth();
+  const { checkAuthStatus, user, isAuthLoading } = useAuth();
 
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  if (isAuthLoading) {
+    return <div>Loading...</div>; // Or a spinner
+  }
 
   return (
     <Router>
@@ -137,7 +144,25 @@ const AppRoutes: React.FC = () => {
           />
 
           {/* Onboarding Route */}
-          <Route path="/onboarding" element={<Onboarding />} />
+          <Route
+            path="/onboarding"
+            element={
+              isAuthLoading || !user ? (
+                <div>Loading...</div>
+              ) : !isOnboardingComplete(user) ? (
+                <Onboarding />
+              ) : (
+                <Navigate
+                  to={
+                    user?.role === "provider"
+                      ? "/provider/dashboard"
+                      : "/seeker/dashboard"
+                  }
+                  replace
+                />
+              )
+            }
+          />
 
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />

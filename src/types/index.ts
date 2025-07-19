@@ -60,6 +60,7 @@ export interface Application {
 export interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
+  isAuthLoading?: boolean; // <-- Add this line to match context
 }
 
 export interface GoogleLoginResponse {

@@ -162,73 +162,56 @@ const Onboarding: React.FC = () => {
                   />
                 </div>
               </div>
-
-              <div>
-                <label
-                  htmlFor="location"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Location
-                </label>
-                <div className="mt-1 relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    id="location"
-                    name="location"
-                    type="text"
-                    required
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Your city or area"
-                  />
-                </div>
-              </div>
             </div>
 
-            {/* Work Categories */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Work Categories (Select all that apply)
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {workCategories.map((category) => (
-                  <label key={category} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.workCategories.includes(category)}
-                      onChange={() => handleCategoryChange(category)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">
-                      {category}
-                    </span>
+            {/* Only show Work Categories and Bio if NOT provider */}
+            {formData.role !== "provider" && (
+              <>
+                {/* Work Categories */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Work Categories (Select all that apply)
                   </label>
-                ))}
-              </div>
-            </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {workCategories.map((category) => (
+                      <label key={category} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.workCategories.includes(category)}
+                          onChange={() => handleCategoryChange(category)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          {category}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Bio */}
-            <div>
-              <label
-                htmlFor="bio"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Bio
-              </label>
-              <div className="mt-1 relative">
-                <FileText className="absolute left-3 top-3 text-gray-400 h-5 w-5" />
-                <textarea
-                  id="bio"
-                  name="bio"
-                  rows={3}
-                  value={formData.bio}
-                  onChange={handleInputChange}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Tell us about yourself and your experience..."
-                />
-              </div>
-            </div>
+                {/* Bio */}
+                <div>
+                  <label
+                    htmlFor="bio"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Bio
+                  </label>
+                  <div className="mt-1 relative">
+                    <FileText className="absolute left-3 top-3 text-gray-400 h-5 w-5" />
+                    <textarea
+                      id="bio"
+                      name="bio"
+                      rows={3}
+                      value={formData.bio}
+                      onChange={handleInputChange}
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Tell us about yourself and your experience..."
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             <div>
               <button

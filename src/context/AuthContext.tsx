@@ -1,9 +1,15 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import ApiService from "../services/api";
-import { User, AuthState, GoogleLoginResponse } from "../types";
+import { User, GoogleLoginResponse } from "../types";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: User | null;
+  isAuthLoading?: boolean; // <-- Add this line
+}
 
 interface AuthContextType extends AuthState {
   login: (user: User) => void;
@@ -37,6 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return {
       isAuthenticated: !!token,
       user: userStr ? JSON.parse(userStr) : null,
+      isAuthLoading: false, // <-- Add this line
     };
   });
 
@@ -44,6 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthState({
       isAuthenticated: true,
       user,
+      isAuthLoading: false, // <-- Ensure this is set
     });
   };
 
@@ -52,6 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthState({
       isAuthenticated: false,
       user: null,
+      isAuthLoading: false, // <-- Ensure this is set
     });
   };
 
@@ -138,7 +147,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Update checkAuthStatus to set isAuthLoading
   const checkAuthStatus = async () => {
+    setAuthState((prev) => ({ ...prev, isAuthLoading: true }));
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
     if (token && userStr) {
@@ -147,21 +158,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setAuthState({
           isAuthenticated: true,
           user,
+          isAuthLoading: false, // <-- Set loading false
         });
-        // Optionally, validate token with backend here
-        // If you want, you can call ApiService.getMe() and update user
       } catch {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         setAuthState({
           isAuthenticated: false,
           user: null,
+          isAuthLoading: false, // <-- Set loading false
         });
       }
     } else {
       setAuthState({
         isAuthenticated: false,
         user: null,
+        isAuthLoading: false, // <-- Set loading false
       });
     }
   };
