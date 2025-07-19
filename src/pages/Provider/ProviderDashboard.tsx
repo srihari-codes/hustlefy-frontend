@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import ApiService from "../../services/api";
-import { Job, Application } from "../../types";
+import { Job, Applicant } from "../../types"; // <-- Use Applicant interface
 import { Plus, Users, CheckCircle, XCircle, Clock } from "lucide-react";
 
 const ProviderDashboard: React.FC = () => {
   const { user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,25 +21,19 @@ const ProviderDashboard: React.FC = () => {
     try {
       setLoading(true);
       const [jobsResponse] = await Promise.all([ApiService.getMyJobs()]);
-
       setJobs(jobsResponse.data);
 
-      // Fetch applications for all jobs
-      const allApplications: Application[] = [];
+      // Fetch applicants for all jobs
+      const allApplicants: Applicant[] = [];
       for (const job of jobsResponse.data) {
         try {
-          const applicationsResponse = await ApiService.getJobApplicants(
-            job._id // <-- Correct property
-          );
-          allApplications.push(...applicationsResponse.data);
+          const applicantsResponse = await ApiService.getJobApplicants(job._id);
+          allApplicants.push(...applicantsResponse.data);
         } catch (error) {
-          console.error(
-            `Error fetching applications for job ${job._id}:`,
-            error
-          );
+          console.error(`Error fetching applicants for job ${job._id}:`, error);
         }
       }
-      setApplications(allApplications);
+      setApplicants(allApplicants);
     } catch (error) {
       console.error("Error fetching provider data:", error);
     } finally {
@@ -48,28 +42,29 @@ const ProviderDashboard: React.FC = () => {
   };
 
   const handleApplicationAction = async (
-    applicationId: string,
+    applicantId: string,
     action: "accept" | "reject"
   ) => {
     try {
-      const application = applications.find((app) => app._id === applicationId);
-      if (!application) return;
+      const applicant = applicants.find((app) => app._id === applicantId);
+      if (!applicant) return;
 
+      // For Applicant interface, jobId is a string
       if (action === "accept") {
-        await ApiService.acceptApplicant(application.jobId, applicationId);
+        await ApiService.acceptApplicant(applicant.jobId, applicantId);
       } else {
-        await ApiService.rejectApplicant(application.jobId, applicationId);
+        await ApiService.rejectApplicant(applicant.jobId, applicantId);
       }
 
       // Refresh data after action
       await fetchProviderData();
     } catch (error) {
-      console.error(`Error ${action}ing application:`, error);
-      alert(`Failed to ${action} application. Please try again.`);
+      console.error(`Error ${action}ing applicant:`, error);
+      alert(`Failed to ${action} applicant. Please try again.`);
     }
   };
 
-  const pendingApplications = applications.filter(
+  const pendingApplicants = applicants.filter(
     (app) => app.status === "pending"
   );
   const activeJobs = jobs.filter((job) => job.status === "open");
@@ -126,7 +121,7 @@ const ProviderDashboard: React.FC = () => {
                 Pending Applications
               </p>
               <p className="text-2xl font-bold text-gray-900">
-                {pendingApplications.length}
+                {pendingApplicants.length}
               </p>
             </div>
           </div>
@@ -147,8 +142,8 @@ const ProviderDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Pending Applications */}
-      {pendingApplications.length > 0 && (
+      {/* Pending Applicants */}
+      {pendingApplicants.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">
@@ -156,23 +151,21 @@ const ProviderDashboard: React.FC = () => {
             </h2>
           </div>
           <div className="divide-y divide-gray-200">
-            {pendingApplications.map((application) => {
-              const job = jobs.find((j) => j._id === application.jobId);
+            {pendingApplicants.map((applicant) => {
+              const job = jobs.find((j) => j._id === applicant.jobId);
               return (
-                <div key={application._id} className="p-6">
+                <div key={applicant._id} className="p-6">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <h3 className="text-lg font-medium text-gray-900">
-                        {application.seekerName}
+                        {applicant.seekerName}
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
                         Applied for: {job?.title}
                       </p>
-                      <p className="text-gray-700 mb-3">
-                        {application.message}
-                      </p>
+                      <p className="text-gray-700 mb-3">{applicant.message}</p>
                       <div className="flex flex-wrap gap-2">
-                        {application.seekerCategories.map((category) => (
+                        {applicant.seekerCategories.map((category) => (
                           <span
                             key={category}
                             className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -185,7 +178,7 @@ const ProviderDashboard: React.FC = () => {
                     <div className="ml-6 flex space-x-3">
                       <button
                         onClick={() =>
-                          handleApplicationAction(application._id, "accept")
+                          handleApplicationAction(applicant._id, "accept")
                         }
                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-1"
                       >
@@ -194,7 +187,7 @@ const ProviderDashboard: React.FC = () => {
                       </button>
                       <button
                         onClick={() =>
-                          handleApplicationAction(application._id, "reject")
+                          handleApplicationAction(applicant._id, "reject")
                         }
                         className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-1"
                       >

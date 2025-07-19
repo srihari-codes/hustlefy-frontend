@@ -165,6 +165,13 @@ class ApiService {
     });
     return this.handleResponse(response);
   }
+
+  static async getUserApplications() {
+    const response = await fetch(`${API_BASE_URL}/jobs/user/applications`, {
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse(response);
+  }
 }
 
 export default ApiService;

@@ -35,24 +35,23 @@ export interface Job {
 }
 
 export interface Application {
-  _id: string; // <-- Use _id to match backend response
-  jobId: string;
-  seekerId:
-    | string
-    | {
-        _id: string;
-        name: string;
-        email: string;
-        workCategories: string[];
-        bio: string;
-        location: string;
-        phone: string;
-      };
+  _id: string;
+  jobId: {
+    _id: string;
+    title: string;
+    description: string;
+    location: string;
+    category: string;
+    duration: string;
+    payment: number;
+    status: string;
+  };
+  seekerId: string;
   seekerName: string;
   seekerBio: string;
   seekerCategories: string[];
   message: string;
-  status: "pending" | "accepted" | "rejected";
+  status: "pending" | "accepted" | "rejected" | "fulfilled";
   createdAt: string;
   updatedAt: string;
   __v?: number;
@@ -68,4 +67,26 @@ export interface GoogleLoginResponse {
   token: string;
   isNewUser?: boolean;
   message?: string;
+}
+
+export interface Applicant {
+  _id: string;
+  jobId: string; // <-- jobId is a string here
+  seekerId: {
+    _id: string;
+    name: string;
+    email: string;
+    workCategories: string[];
+    bio: string;
+    location: string;
+    phone: string;
+  };
+  seekerName: string;
+  seekerBio: string;
+  seekerCategories: string[];
+  message: string;
+  status: "pending" | "accepted" | "rejected" | "fulfilled";
+  createdAt: string;
+  updatedAt: string;
+  __v?: number;
 }
