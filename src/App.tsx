@@ -17,6 +17,7 @@ import SeekerDashboard from "./pages/Seeker/SeekerDashboard";
 import ApplyJob from "./pages/Seeker/ApplyJob";
 import { isOnboardingComplete } from "./utils/onboarding";
 import Onboarding from "./pages/Onboarding";
+import Footer from "./components/Layout/Footer";
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{
@@ -176,7 +177,10 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <>
+        <AppRoutes />
+        <Footer /> {/* This will show Footer on all pages */}
+      </>
     </AuthProvider>
   );
 };
