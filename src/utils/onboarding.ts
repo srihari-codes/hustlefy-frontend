@@ -3,8 +3,17 @@ import { User } from "../types";
 
 export function isOnboardingComplete(user: User | null): boolean {
   if (!user) return false;
-  console.log("Checking onboarding for user:", user);
-  // Check if role is set and other required fields (customize as needed)
-  console.log(!!user.role && !!user.name && !!user.location);
-  return !!user.role && !!user.name && !!user.location;
+
+  if (user.role === "provider") {
+    return !!user.name && !!user.phone && !!user.email;
+  } else {
+    return (
+      !!user.name &&
+      !!user.phone &&
+      !!user.email &&
+      !!user.bio &&
+      Array.isArray(user.workCategories) &&
+      user.workCategories.length > 0
+    );
+  }
 }

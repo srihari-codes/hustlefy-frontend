@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { workCategories } from "../data/mockData";
-import { Briefcase, User, Phone, MapPin, FileText } from "lucide-react";
+import { Briefcase, User, Phone, FileText } from "lucide-react";
 
 const Onboarding: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -53,12 +53,47 @@ const Onboarding: React.FC = () => {
   };
 
   useEffect(() => {
-    if (submitted && user && user.role && user.name && user.location) {
+    if (
+      submitted &&
+      user &&
+      user.role &&
+      user.name &&
+      user.phone // check phone instead of location
+    ) {
+      console.log("Navigating to dashboard for role:", user.role);
       navigate(
         user.role === "provider" ? "/provider/dashboard" : "/seeker/dashboard"
       );
     }
   }, [submitted, user, navigate]);
+
+  const isFormValid = (() => {
+    const nameValid =
+      typeof formData.name === "string" &&
+      formData.name.trim().length > 0 &&
+      formData.name.trim().length <= 100;
+    const phoneValid =
+      typeof formData.phone === "string" &&
+      /^\d{10}$/.test(formData.phone.trim()); // must be exactly 10 digits
+    const roleValid =
+      formData.role === "provider" || formData.role === "seeker";
+
+    if (formData.role === "provider") {
+      return nameValid && phoneValid && roleValid;
+    } else {
+      const bioValid =
+        typeof formData.bio === "string" &&
+        formData.bio.trim().length > 0 &&
+        formData.bio.trim().length <= 500;
+      const workCategoriesValid =
+        Array.isArray(formData.workCategories) &&
+        formData.workCategories.length > 0 &&
+        formData.workCategories.every((cat) => workCategories.includes(cat));
+      return (
+        nameValid && phoneValid && roleValid && bioValid && workCategoriesValid
+      );
+    }
+  })();
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -157,6 +192,7 @@ const Onboarding: React.FC = () => {
                     type="tel"
                     value={formData.phone}
                     onChange={handleInputChange}
+                    maxLength={10} // <-- Prevents typing more than 10 digits
                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="(555) 123-4567"
                   />
@@ -205,6 +241,7 @@ const Onboarding: React.FC = () => {
                       rows={3}
                       value={formData.bio}
                       onChange={handleInputChange}
+                      maxLength={500} // <-- Prevents typing more than 500 chars
                       className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Tell us about yourself and your experience..."
                     />
@@ -216,7 +253,7 @@ const Onboarding: React.FC = () => {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !isFormValid}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 {isLoading ? "Setting up your profile..." : "Complete Profile"}
