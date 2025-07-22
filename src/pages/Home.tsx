@@ -72,104 +72,159 @@ const Home: React.FC = () => {
   const categories = [...new Set(jobs.map((job) => job.category))];
 
   return (
-    <div className="space-y-8">
+    <main className="min-h-screen bg-orange-50">
       {/* Hero Section */}
-      <div className="text-center bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg p-12">
-        <h1 className="text-4xl font-bold mb-4">Find Work. Get Done.</h1>
-        <p className="text-xl mb-8 opacity-90">
-          Connect with local job opportunities or find reliable workers for your
-          projects.
-        </p>
-        {!isAuthenticated && (
-          <div className="space-x-4">
+      <section className="px-6 py-16 md:py-24 max-w-7xl mx-auto ">
+        {/* Left Column */}
+        <div className="w-full md:float-left md:w-1/2 max-w-lg">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-relaxed tracking-wide">
+            Find Quick, Local Jobs on Your Schedule
+          </h1>
+          <p className="text-gray-600 mt-4 text-lg">
+            Earn money with simple, one-time tasks nearby
+          </p>
+          {!isAuthenticated ? (
             <button
               onClick={() => navigate("/signup?role=seeker")}
-              className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              className="mt-6 inline-block bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200"
             >
-              Find Work
+              Find Tasks
             </button>
+          ) : (
             <button
-              onClick={() => navigate("/signup?role=provider")}
-              className="bg-blue-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors"
+              onClick={() => {
+                if (user?.role === "seeker") {
+                  navigate("/seeker/dashboard");
+                } else if (user?.role === "provider") {
+                  navigate("/provider/dashboard");
+                }
+              }}
+              className="mt-6 inline-block bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200"
             >
-              Post Jobs
+              Find Tasks
             </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <input
-              type="text"
-              placeholder="Search jobs..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        {/* Right Column */}
+        <div className="hidden md:block md:float-right md:w-1/2 flex justify-center mt-[70px] md:mt-0">
+          <div className="w-[500px] md:w-[600px] h-[400px] md:h-[500px] flex items-center justify-center relative -mt-[80px] overflow-hidden">
+            {/* Background SVG */}
+            <img
+              src="/assets/images/blob-haikei.svg"
+              alt="Background blob"
+              className="absolute inset-0 w-full h-full z-0 object-cover bg-transparent"
             />
-          </div>
 
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <input
-              type="text"
-              placeholder="Location (Coming Soon)"
-              disabled
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+            {/* Man Pointing PNG - Flipped to point left and cropped to show only the man */}
+            <img
+              src="/assets/images/man-pointing.png"
+              alt="Man pointing to the left"
+              className="w-[350px] h-[350px] md:w-[450px] md:h-[450px] object-cover object-center transform scale-x-[-1] translate-y-[20px] relative z-10"
             />
           </div>
         </div>
-      </div>
 
-      {/* Job Listings */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Available Jobs ({filteredJobs.length})
-        </h2>
+        <div className="md:clear-both"></div>
+      </section>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-500">Loading jobs...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-12">
-            <p className="text-red-500 mb-4">{error}</p>
-            <button
-              onClick={fetchJobs}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Try Again
+      {/* Latest Tasks Section */}
+      <section className="px-6 pb-12 max-w-7xl mx-auto">
+        <div className="bg-white shadow-lg rounded-xl px-6 py-6 -mt-6 relative z-10">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 font-poppins">
+            Latest Tasks
+          </h2>
+
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Category Dropdown */}
+            <div className="flex-1 min-w-[120px]">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white text-gray-700"
+              >
+                <option value="">Category</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Anytime Dropdown */}
+            <div className="flex-1 min-w-[120px]">
+              <select className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white text-gray-700">
+                <option>Anytime</option>
+                <option>Today</option>
+                <option>Tomorrow</option>
+                <option>This Week</option>
+                <option>This Weekend</option>
+              </select>
+            </div>
+
+            {/* Location Dropdown */}
+            <div className="flex-1 min-w-[120px]">
+              <select className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white text-gray-700">
+                <option>Location</option>
+                <option>Mumbai</option>
+                <option>Delhi</option>
+                <option>Bangalore</option>
+                <option>Pune</option>
+              </select>
+            </div>
+
+            {/* Pay Dropdown */}
+            <div className="flex-1 min-w-[120px]">
+              <select className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white text-gray-700">
+                <option>Pay</option>
+                <option>₹500-1000</option>
+                <option>₹1000-2000</option>
+                <option>₹2000-5000</option>
+                <option>₹5000+</option>
+              </select>
+            </div>
+
+            {/* Search Button */}
+            <button className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-md font-semibold transition-colors duration-200 min-w-[100px]">
+              Search
             </button>
           </div>
-        ) : (
-          <JobList
-            jobs={filteredJobs}
-            onApply={handleApply}
-            showApplyButton={!isAuthenticated || user?.role === "seeker"}
-          />
-        )}
-      </div>
-    </div>
+        </div>
+      </section>
+
+      {/* Job Listings */}
+      <section className="px-6 pb-12 max-w-7xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 font-poppins">
+            Available Jobs ({filteredJobs.length})
+          </h2>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+              <p className="mt-4 text-gray-500">Loading jobs...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-red-500 mb-4">{error}</p>
+              <button
+                onClick={fetchJobs}
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : (
+            <JobList
+              jobs={filteredJobs}
+              onApply={handleApply}
+              showApplyButton={!isAuthenticated || user?.role === "seeker"}
+            />
+          )}
+        </div>
+      </section>
+    </main>
   );
 };
 
