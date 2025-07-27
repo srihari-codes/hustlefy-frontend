@@ -57,10 +57,28 @@ const ProtectedDashboard: React.FC<{ children: React.ReactNode }> = ({
 // Public Route Component
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, user, isAuthLoading } = useAuth();
+
   if (isAuthLoading) return <div>Loading...</div>;
-  if (isAuthenticated && !isOnboardingComplete(user))
-    return <Navigate to="/onboarding" replace />;
-  return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
+
+  if (isAuthenticated) {
+    if (!isOnboardingComplete(user)) {
+      return <Navigate to="/onboarding" replace />;
+    }
+
+    // If user is authenticated and onboarding is complete, redirect to appropriate dashboard
+    return (
+      <Navigate
+        to={
+          user?.role === "provider"
+            ? "/provider/dashboard"
+            : "/seeker/dashboard"
+        }
+        replace
+      />
+    );
+  }
+
+  return <>{children}</>;
 };
 
 // App Routes Component

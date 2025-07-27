@@ -70,7 +70,14 @@ class ApiService {
       headers: this.getAuthHeaders(),
       body: JSON.stringify(profileData),
     });
-    return this.handleResponse(response);
+    const data = await this.handleResponse(response);
+
+    // Update the token in localStorage if a new token is provided
+    if (data.token) {
+      localStorage.setItem("token", data.token);
+    }
+
+    return data;
   }
 
   // Job endpoints

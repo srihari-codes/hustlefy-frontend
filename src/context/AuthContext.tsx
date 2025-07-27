@@ -181,20 +181,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateUserProfile = async (profileData: any) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.put(`${API_BASE_URL}/profile`, profileData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      // Updated: get user from response.data.data
-      const updatedUser = (response.data as { data: User }).data;
-      if (updatedUser) {
+      const response = await axios.put<{ data: User; token: string }>(
+        `${API_BASE_URL}/profile`,
+        profileData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Extract both user and token from response
+      const { data: updatedUser, token: newToken } = response.data;
+
+      if (updatedUser && newToken) {
+        // Update localStorage with new token and user data
+        localStorage.setItem("token", newToken);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        // Update auth state
         setAuthState((prev) => ({
           ...prev,
           user: updatedUser,
         }));
-        localStorage.setItem("user", JSON.stringify(updatedUser));
       }
     } catch (error: any) {
       throw new Error(

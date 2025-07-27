@@ -49,6 +49,8 @@ const Signup: React.FC = () => {
       if (response?.isNewUser) {
         navigate("/onboarding");
       } else {
+        console.log("User already exists, redirecting to dashboard");
+
         navigate(
           response.user.role === "provider"
             ? "/provider/dashboard"
