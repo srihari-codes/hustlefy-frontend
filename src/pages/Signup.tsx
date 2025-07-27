@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Briefcase, Mail, Lock, Shield, RefreshCw } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Shield,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 declare global {
@@ -24,9 +33,37 @@ const Signup: React.FC = () => {
   const [showOtp, setShowOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
 
   const navigate = useNavigate();
   const { login, loginWithGoogle } = useAuth();
+
+  // Common email domains
+  const commonDomains = [
+    "gmail.com",
+    "yahoo.com",
+    "hotmail.com",
+    "outlook.com",
+    "icloud.com",
+    "protonmail.com",
+    "aol.com",
+    "live.com",
+    "msn.com",
+    "ymail.com",
+  ];
+
+  // Form validation
+  const isFormValid = !showOtp
+    ? formData.email &&
+      formData.password &&
+      formData.confirmPassword &&
+      formData.password.length >= 6 &&
+      passwordsMatch === true
+    : formData.otp.length === 6;
 
   // Timer for OTP resend
   useEffect(() => {
@@ -38,6 +75,40 @@ const Signup: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [otpTimer]);
+
+  // Password match validation
+  useEffect(() => {
+    if (formData.password && formData.confirmPassword) {
+      setPasswordsMatch(formData.password === formData.confirmPassword);
+    } else {
+      setPasswordsMatch(null);
+    }
+  }, [formData.password, formData.confirmPassword]);
+
+  // Email suggestion logic
+  useEffect(() => {
+    const email = formData.email;
+    if (email && email.includes("@")) {
+      const [localPart, domainPart] = email.split("@");
+      if (domainPart && domainPart.length > 0) {
+        const suggestions = commonDomains
+          .filter((domain) =>
+            domain.toLowerCase().startsWith(domainPart.toLowerCase())
+          )
+          .map((domain) => `${localPart}@${domain}`)
+          .slice(0, 5);
+
+        setEmailSuggestions(suggestions);
+        setShowSuggestions(
+          suggestions.length > 0 && domainPart !== suggestions[0]?.split("@")[1]
+        );
+      } else {
+        setShowSuggestions(false);
+      }
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [formData.email]);
 
   // Google Sign-In Button
   const handleGoogleSignIn = async (credentialResponse: any) => {
@@ -87,6 +158,19 @@ const Signup: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError(""); // Clear error when user types
+  };
+
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    // Only allow numbers and limit to 6 characters
+    const numericValue = value.replace(/[^0-9]/g, "").slice(0, 6);
+    setFormData((prev) => ({ ...prev, otp: numericValue }));
+    setError(""); // Clear error when user types
+  };
+
+  const handleEmailSuggestionClick = (suggestion: string) => {
+    setFormData((prev) => ({ ...prev, email: suggestion }));
+    setShowSuggestions(false);
   };
 
   const sendOTP = async () => {
@@ -195,180 +279,353 @@ const Signup: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto">
-        <div className="text-center">
-          <Briefcase className="mx-auto h-12 w-12 text-blue-600" />
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+    <div className="min-h-screen bg-orange-50 relative">
+      {/* Very subtle background elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-1/3 left-1/3 w-64 h-64 bg-orange-100/30 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/3 right-1/3 w-48 h-48 bg-orange-200/20 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="flex justify-center">
+            <div className="rounded-xl bg-white/80 border border-orange-100 shadow-sm overflow-hidden">
+              <img
+                src="/assets/images/hustlefy-logo.png"
+                alt="Hustlefy"
+                className="h-16 w-16 object-cover"
+              />
+            </div>
+          </div>
+          <h2 className="mt-6 text-center text-3xl font-bold text-gray-800">
             Join Hustlefy
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-gray-600">
             Or{" "}
             <Link
               to="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
+              className="font-medium text-orange-600 hover:text-orange-500 transition-colors duration-200"
             >
               sign in to your existing account
             </Link>
           </p>
         </div>
 
-        <div className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <div className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
-
-            {/* Google Sign-In Button */}
-            <div className="mb-6">
-              <div id="google-signin-button"></div>
-            </div>
-
-            {/* OR Divider */}
-            <div className="flex items-center my-4">
-              <div className="flex-grow border-t border-gray-200"></div>
-              <span className="mx-4 text-gray-500 font-medium">or</span>
-              <div className="flex-grow border-t border-gray-200"></div>
-            </div>
-
-            {/* Email Sign-Up Fields */}
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email Address
-              </label>
-              <div className="mt-1 relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  disabled={otpSent}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                  placeholder="your@email.com"
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  disabled={otpSent}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                  placeholder="Create a password"
-                />
-              </div>
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Confirm Password
-              </label>
-              <div className="mt-1 relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  disabled={otpSent}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
-                  placeholder="Confirm your password"
-                />
-              </div>
-            </div>
-
-            {/* OTP Field - Only shows after OTP is sent */}
-            {showOtp && (
-              <div className="animate-pulse">
-                <label
-                  htmlFor="otp"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Email Verification Code
-                </label>
-                <div className="mt-1 relative">
-                  <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    id="otp"
-                    name="otp"
-                    type="text"
-                    required
-                    value={formData.otp}
-                    onChange={handleInputChange}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter 6-digit code"
-                    maxLength={6}
-                  />
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          {/* Minimalist glass container */}
+          <div className="relative">
+            <div className="bg-white/60 backdrop-blur-sm border border-orange-100/60 shadow-lg rounded-2xl p-8">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+                  {error}
                 </div>
-                <div className="mt-2 flex justify-between items-center">
-                  <p className="text-sm text-gray-600">
-                    Code sent to {formData.email}
-                  </p>
+              )}
+
+              {/* Google Sign-In Button */}
+              <div className="mb-8">
+                <div id="google-signin-button" className="w-full"></div>
+                {/* Custom styled overlay for better integration */}
+                <style>{`
+                  #google-signin-button > div {
+                    background: rgba(255, 255, 255, 0.9) !important;
+                    border: 1px solid rgba(249, 115, 22, 0.2) !important;
+                    border-radius: 12px !important;
+                    transition: all 0.2s ease !important;
+                  }
+                  #google-signin-button > div:hover {
+                    background: rgba(255, 255, 255, 1) !important;
+                    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.1) !important;
+                  }
+                `}</style>
+              </div>
+
+              {/* Clean divider */}
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-3 bg-white text-gray-500">
+                    Or continue with email
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {/* Email Input with Suggestions */}
+                <div className="group relative">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      onFocus={() => {
+                        if (emailSuggestions.length > 0)
+                          setShowSuggestions(true);
+                      }}
+                      onBlur={() => {
+                        // Delay hiding suggestions to allow clicks
+                        setTimeout(() => setShowSuggestions(false), 200);
+                      }}
+                      disabled={otpSent}
+                      className="w-full pl-10 pr-3 py-2 bg-white/80 border border-gray-200 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 disabled:bg-gray-100"
+                      placeholder="Enter your email"
+                    />
+
+                    {/* Email Suggestions Dropdown */}
+                    {showSuggestions &&
+                      emailSuggestions.length > 0 &&
+                      !otpSent && (
+                        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-20 mt-1 max-h-40 overflow-y-auto">
+                          {emailSuggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() =>
+                                handleEmailSuggestionClick(suggestion)
+                              }
+                              className="w-full text-left px-4 py-2 hover:bg-orange-50 focus:bg-orange-50 focus:outline-none transition-colors duration-150 text-gray-700 first:rounded-t-lg last:rounded-b-lg"
+                            >
+                              <span className="text-gray-900">
+                                {suggestion.split("@")[0]}
+                              </span>
+                              <span className="text-orange-600">
+                                @{suggestion.split("@")[1]}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                  </div>
+                </div>
+
+                {/* Password Input */}
+                <div className="group">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      disabled={otpSent}
+                      className="w-full pl-10 pr-12 py-2 bg-white/80 border border-gray-200 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 disabled:bg-gray-100"
+                      placeholder="Create a password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={otpSent}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password Input */}
+                <div className="group">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      disabled={otpSent}
+                      className={`w-full pl-10 pr-12 py-2 bg-white/80 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 transition-all duration-200 disabled:bg-gray-100 ${
+                        passwordsMatch === false
+                          ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                          : passwordsMatch === true
+                          ? "border-green-300 focus:border-green-500 focus:ring-green-500/20"
+                          : "border-gray-200 focus:border-orange-500 focus:ring-orange-500/20"
+                      }`}
+                      placeholder="Confirm your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      disabled={otpSent}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Password Match Indicator */}
+                  {formData.confirmPassword && passwordsMatch !== null && (
+                    <div
+                      className={`mt-2 flex items-center space-x-2 text-sm transition-all duration-200 ${
+                        passwordsMatch ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {passwordsMatch ? (
+                        <>
+                          <CheckCircle className="h-4 w-4" />
+                          <span>Passwords match</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="h-4 w-4" />
+                          <span>Passwords don't match</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* OTP Field - Only shows after OTP is sent */}
+                {showOtp && (
+                  <div className="group animate-fade-in">
+                    <label
+                      htmlFor="otp"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Email Verification Code
+                    </label>
+                    <div className="relative">
+                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <input
+                        id="otp"
+                        name="otp"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        required
+                        value={formData.otp}
+                        onChange={handleOtpChange}
+                        className="w-full pl-10 pr-3 py-2 bg-white/80 border border-gray-200 rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 text-center text-lg tracking-widest font-mono"
+                        placeholder="000000"
+                        maxLength={6}
+                      />
+                    </div>
+                    <div className="mt-2 flex justify-between items-center">
+                      <p className="text-sm text-gray-600">
+                        Code sent to {formData.email}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={resendOTP}
+                        disabled={otpTimer > 0}
+                        className="text-sm text-orange-600 hover:text-orange-500 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+                      >
+                        {otpTimer > 0 ? (
+                          <span className="text-orange-600 font-medium">
+                            Resend in {otpTimer}s
+                          </span>
+                        ) : (
+                          "Resend Code"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <div>
                   <button
                     type="button"
-                    onClick={resendOTP}
-                    disabled={otpTimer > 0}
-                    className="text-sm text-blue-600 hover:text-blue-500 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    onClick={handleSubmit}
+                    disabled={isLoading || isSendingOTP || !isFormValid}
+                    className="w-full py-2 px-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
-                    {otpTimer > 0 ? `Resend in ${otpTimer}s` : "Resend Code"}
+                    {isSendingOTP ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <RefreshCw className="animate-spin h-4 w-4" />
+                        <span>Sending Code...</span>
+                      </div>
+                    ) : isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        <span>Creating Account...</span>
+                      </div>
+                    ) : !showOtp ? (
+                      "Send Verification Code"
+                    ) : (
+                      "Verify & Create Account"
+                    )}
                   </button>
                 </div>
               </div>
-            )}
 
-            <div>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isLoading || isSendingOTP}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                {isSendingOTP ? (
-                  <>
-                    <RefreshCw className="animate-spin h-4 w-4 mr-2" />
-                    Sending Code...
-                  </>
-                ) : isLoading ? (
-                  "Creating Account..."
-                ) : !showOtp ? (
-                  "Send Verification Code"
-                ) : (
-                  "Verify & Create Account"
-                )}
-              </button>
+              {/* Simple bottom section */}
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-3 bg-white text-gray-500">
+                      Already have an account?
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 text-center">
+                  <Link
+                    to="/login"
+                    className="text-orange-600 hover:text-orange-500 font-medium transition-colors duration-200"
+                  >
+                    Sign in to your account
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <style>{`
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };
