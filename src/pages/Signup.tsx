@@ -149,7 +149,7 @@ const Signup: React.FC = () => {
         {
           theme: "outline",
           size: "large",
-          width: 384, // Fixed width in pixels
+          width: 355, // Changed from 384 to 355 to match Login.tsx
           height: 44, // Fixed height in pixels
           text: "signin_with",
           shape: "rectangular",
@@ -616,16 +616,19 @@ const Signup: React.FC = () => {
           }
         }
         
-        /* Center Google Sign-In Button */
+        /* Center Google Sign-In Button to the form */
         #google-signin-button {
           display: flex !important;
           justify-content: center !important;
           align-items: center !important;
+          width: 100% !important;
         }
         
-        #google-signin-button > div {
-          width: 384px !important;
+        #google-signin-button > div,
+        #google-signin-button iframe {
+          width: 355px !important;
           height: 44px !important;
+          margin: 0 auto !important;
         }
       `}</style>
     </div>
