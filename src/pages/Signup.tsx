@@ -140,6 +140,8 @@ const Signup: React.FC = () => {
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         callback: handleGoogleSignIn,
+        auto_select: false,
+        cancel_on_tap_outside: true,
       });
 
       window.google.accounts.id.renderButton(
@@ -147,8 +149,11 @@ const Signup: React.FC = () => {
         {
           theme: "outline",
           size: "large",
-          width: "100%",
+          width: 384, // Fixed width in pixels
+          height: 44, // Fixed height in pixels
           text: "signin_with",
+          shape: "rectangular",
+          logo_alignment: "left",
         }
       );
     }
@@ -322,22 +327,7 @@ const Signup: React.FC = () => {
               )}
 
               {/* Google Sign-In Button */}
-              <div className="mb-8">
-                <div id="google-signin-button" className="w-full"></div>
-                {/* Custom styled overlay for better integration */}
-                <style>{`
-                  #google-signin-button > div {
-                    background: rgba(255, 255, 255, 0.9) !important;
-                    border: 1px solid rgba(249, 115, 22, 0.2) !important;
-                    border-radius: 12px !important;
-                    transition: all 0.2s ease !important;
-                  }
-                  #google-signin-button > div:hover {
-                    background: rgba(255, 255, 255, 1) !important;
-                    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.1) !important;
-                  }
-                `}</style>
-              </div>
+              <div id="google-signin-button" className="mb-8"></div>
 
               {/* Clean divider */}
               <div className="relative mb-6">
@@ -624,6 +614,18 @@ const Signup: React.FC = () => {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        
+        /* Center Google Sign-In Button */
+        #google-signin-button {
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+        }
+        
+        #google-signin-button > div {
+          width: 384px !important;
+          height: 44px !important;
         }
       `}</style>
     </div>
