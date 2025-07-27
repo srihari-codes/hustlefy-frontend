@@ -18,6 +18,7 @@ export interface Job {
   location: string;
   category: string;
   peopleNeeded: number;
+
   peopleAccepted: number;
   duration: string;
   payment: number;

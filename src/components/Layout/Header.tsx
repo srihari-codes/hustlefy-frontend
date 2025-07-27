@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { LogOut, User, Search, Menu, X, Zap, Home } from "lucide-react";
+import { LogOut, User, Search, Menu, X, Home } from "lucide-react";
 
 interface HeaderProps {
   bgColor?: string;
@@ -30,12 +30,16 @@ const Header: React.FC<HeaderProps> = ({ bgColor = "bg-white" }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-xl group-hover:scale-110 transition-transform duration-200">
-              <Zap className="h-6 w-6 text-white" />
+          <Link to="/" className="flex items-center group relative">
+            <div className="p-2 rounded-xl group-hover:scale-110 transition-transform duration-200">
+              <img
+                src="/assets/images/hustlefy-logo.png"
+                alt="Hustlefy"
+                className="h-10 w-10 object-contain"
+              />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-              Hustlefy
+            <span className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent absolute left-10">
+              ustlefy
             </span>
           </Link>
 

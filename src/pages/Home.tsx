@@ -128,78 +128,9 @@ const Home: React.FC = () => {
         <div className="md:clear-both"></div>
       </section>
 
-      {/* Latest Tasks Section */}
-      <section className="px-6 pb-12 max-w-7xl mx-auto">
-        <div className="bg-white shadow-lg rounded-xl px-6 py-6 -mt-6 relative z-10">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 font-poppins">
-            Latest Tasks
-          </h2>
-
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Category Dropdown */}
-            <div className="flex-1 min-w-[120px]">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white text-gray-700"
-              >
-                <option value="">Category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Anytime Dropdown */}
-            <div className="flex-1 min-w-[120px]">
-              <select className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white text-gray-700">
-                <option>Anytime</option>
-                <option>Today</option>
-                <option>Tomorrow</option>
-                <option>This Week</option>
-                <option>This Weekend</option>
-              </select>
-            </div>
-
-            {/* Location Dropdown */}
-            <div className="flex-1 min-w-[120px]">
-              <select className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white text-gray-700">
-                <option>Location</option>
-                <option>Mumbai</option>
-                <option>Delhi</option>
-                <option>Bangalore</option>
-                <option>Pune</option>
-              </select>
-            </div>
-
-            {/* Pay Dropdown */}
-            <div className="flex-1 min-w-[120px]">
-              <select className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white text-gray-700">
-                <option>Pay</option>
-                <option>₹500-1000</option>
-                <option>₹1000-2000</option>
-                <option>₹2000-5000</option>
-                <option>₹5000+</option>
-              </select>
-            </div>
-
-            {/* Search Button */}
-            <button className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-md font-semibold transition-colors duration-200 min-w-[100px]">
-              Search
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* Job Listings */}
-      <section className="px-6 pb-12 max-w-7xl mx-auto">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 font-poppins">
-            Available Jobs ({filteredJobs.length})
-          </h2>
-
+      <section className="px-1 sm:px-6 pb-12 max-w-7xl mx-auto">
+        <div className="bg-orange-50/90 backdrop-blur-sm border border-orange-100/40 rounded-xl p-2 sm:p-6">
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
