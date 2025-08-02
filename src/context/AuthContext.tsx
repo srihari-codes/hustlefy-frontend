@@ -74,13 +74,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   };
 
-  const updateUser = (userData: Partial<User>) => {
-    if (authState.user) {
-      setAuthState((prev) => ({
-        ...prev,
-        user: { ...prev.user!, ...userData },
-      }));
-    }
+  const updateUser = (updatedData: any) => {
+    const updatedUser = { ...authState.user, ...updatedData };
+    setAuthState((prev) => ({
+      ...prev,
+      user: updatedUser,
+    }));
+    localStorage.setItem("user", JSON.stringify(updatedUser));
   };
 
   const loginWithCredentials = async (email: string, password: string) => {
