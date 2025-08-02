@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import ApiService from "../services/api";
 import { User, GoogleLoginResponse } from "../types";
 import axios from "axios";
@@ -8,7 +14,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL;
 export interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
-  isAuthLoading?: boolean; // <-- Add this line
+  isAuthLoading: boolean; // <-- Keep this
 }
 
 interface AuthContextType extends AuthState {
@@ -16,7 +22,7 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<GoogleLoginResponse>; // <-- Update type here
+  loginWithGoogle: (credential: string) => Promise<GoogleLoginResponse>;
   registerUser: (userData: any) => Promise<void>;
   checkAuthStatus: () => Promise<void>;
   updateUserProfile: (profileData: any) => Promise<void>;
@@ -38,29 +44,33 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>(() => {
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
     return {
-      isAuthenticated: !!token,
-      user: userStr ? JSON.parse(userStr) : null,
-      isAuthLoading: false, // <-- Add this line
+      isAuthenticated: false,
+      user: null,
+      isAuthLoading: true, // <-- Initialize to true
     };
   });
+
+  // Run checkAuthStatus on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
 
   const login = (user: User) => {
     setAuthState({
       isAuthenticated: true,
       user,
-      isAuthLoading: false, // <-- Ensure this is set
+      isAuthLoading: false,
     });
   };
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setAuthState({
       isAuthenticated: false,
       user: null,
-      isAuthLoading: false, // <-- Ensure this is set
+      isAuthLoading: false,
     });
   };
 
@@ -90,6 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setAuthState({
           isAuthenticated: true,
           user,
+          isAuthLoading: false,
         });
       } else {
         throw new Error(response.data.message || "Login failed");
@@ -101,7 +112,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // --- Google login returns GoogleLoginResponse ---
   const loginWithGoogle = async (
     credential: string
   ): Promise<GoogleLoginResponse> => {
@@ -116,8 +126,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setAuthState({
           isAuthenticated: true,
           user: response.data.user,
+          isAuthLoading: false,
         });
-        return response.data; // Return GoogleLoginResponse
+        return response.data;
       } else {
         throw new Error(response.data.message || "Google sign-in failed");
       }
@@ -129,7 +140,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
     }
   };
-  // ------------------------------------------
 
   const registerUser = async (userData: any) => {
     try {
@@ -141,24 +151,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setAuthState({
         isAuthenticated: true,
         user,
+        isAuthLoading: false,
       });
     } catch (error) {
       throw error;
     }
   };
 
-  // Update checkAuthStatus to set isAuthLoading
   const checkAuthStatus = async () => {
     setAuthState((prev) => ({ ...prev, isAuthLoading: true }));
+
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
+
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
         setAuthState({
           isAuthenticated: true,
           user,
-          isAuthLoading: false, // <-- Set loading false
+          isAuthLoading: false,
         });
       } catch {
         localStorage.removeItem("token");
@@ -166,14 +178,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setAuthState({
           isAuthenticated: false,
           user: null,
-          isAuthLoading: false, // <-- Set loading false
+          isAuthLoading: false,
         });
       }
     } else {
       setAuthState({
         isAuthenticated: false,
         user: null,
-        isAuthLoading: false, // <-- Set loading false
+        isAuthLoading: false,
       });
     }
   };
@@ -192,15 +204,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       );
 
-      // Extract both user and token from response
       const { data: updatedUser, token: newToken } = response.data;
 
       if (updatedUser && newToken) {
-        // Update localStorage with new token and user data
         localStorage.setItem("token", newToken);
         localStorage.setItem("user", JSON.stringify(updatedUser));
 
-        // Update auth state
         setAuthState((prev) => ({
           ...prev,
           user: updatedUser,
@@ -223,7 +232,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logout,
         updateUser,
         loginWithCredentials,
-        loginWithGoogle, // <-- Now returns GoogleLoginResponse
+        loginWithGoogle,
         registerUser,
         checkAuthStatus,
         updateUserProfile,

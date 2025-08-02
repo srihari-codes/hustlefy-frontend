@@ -19,12 +19,23 @@ import { isOnboardingComplete } from "./utils/onboarding";
 import Onboarding from "./pages/Onboarding";
 import Footer from "./components/Layout/Footer";
 
+// Loading Screen Component
+const LoadingScreen: React.FC = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+  </div>
+);
+
 // Protected Route Component
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   role?: "provider" | "seeker";
 }> = ({ children, role }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isAuthLoading } = useAuth();
+
+  if (isAuthLoading) {
+    return <LoadingScreen />;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -41,7 +52,11 @@ const ProtectedRoute: React.FC<{
 const ProtectedDashboard: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { user } = useAuth();
+  const { user, isAuthLoading } = useAuth();
+
+  if (isAuthLoading) {
+    return <LoadingScreen />;
+  }
 
   if (!user) {
     return <Navigate to="/login" />;
@@ -58,14 +73,15 @@ const ProtectedDashboard: React.FC<{ children: React.ReactNode }> = ({
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, user, isAuthLoading } = useAuth();
 
-  if (isAuthLoading) return <div>Loading...</div>;
+  if (isAuthLoading) {
+    return <LoadingScreen />;
+  }
 
   if (isAuthenticated) {
     if (!isOnboardingComplete(user)) {
       return <Navigate to="/onboarding" replace />;
     }
 
-    // If user is authenticated and onboarding is complete, redirect to appropriate dashboard
     return (
       <Navigate
         to={
@@ -83,14 +99,10 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 // App Routes Component
 const AppRoutes: React.FC = () => {
-  const { checkAuthStatus, user, isAuthLoading } = useAuth();
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
+  const { user, isAuthLoading } = useAuth();
 
   if (isAuthLoading) {
-    return <div>Loading...</div>; // Or a spinner
+    return <LoadingScreen />;
   }
 
   return (
@@ -166,9 +178,7 @@ const AppRoutes: React.FC = () => {
           <Route
             path="/onboarding"
             element={
-              isAuthLoading || !user ? (
-                <div>Loading...</div>
-              ) : !isOnboardingComplete(user) ? (
+              user && !isOnboardingComplete(user) ? (
                 <Onboarding />
               ) : (
                 <Navigate
@@ -197,7 +207,7 @@ const App: React.FC = () => {
     <AuthProvider>
       <>
         <AppRoutes />
-        <Footer /> {/* This will show Footer on all pages */}
+        <Footer />
       </>
     </AuthProvider>
   );
