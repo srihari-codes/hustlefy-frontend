@@ -5,7 +5,7 @@ import ApiService from "../../services/api";
 import { workCategories } from "../../data/mockData";
 import {
   ArrowLeft,
-  DollarSign,
+  IndianRupee,
   Clock,
   Users,
   MapPin,
@@ -20,8 +20,9 @@ const PostJob: React.FC = () => {
     description: "",
     location: "",
     category: "",
-    peopleNeeded: 1 as number | string, // Allow string during input
-    duration: "",
+    peopleNeeded: 1 as number | string,
+    durationNumber: "" as number | string, // New field
+    durationUnit: "", // New field
     payment: "",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -29,6 +30,13 @@ const PostJob: React.FC = () => {
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
+
+  const durationUnits = [
+    { value: "hours", label: "Hour", plural: "Hours" },
+    { value: "days", label: "Day", plural: "Days" },
+    { value: "weeks", label: "Week", plural: "Weeks" },
+    { value: "months", label: "Month", plural: "Months" },
+  ];
 
   const validateField = (name: string, value: any): string => {
     switch (name) {
@@ -70,9 +78,19 @@ const PostJob: React.FC = () => {
         if (peopleNum > 50) return "Cannot exceed 50 people";
         return "";
 
-      case "duration":
-        const trimmedDuration = value.trim();
-        if (!trimmedDuration) return "Duration is required";
+      case "durationNumber":
+        if (value === "" || value === null || value === undefined)
+          return "Duration is required";
+        const durationNum = parseInt(value);
+        if (isNaN(durationNum)) return "Duration must be a number";
+        if (durationNum <= 0) return "Duration must be greater than 0";
+        if (durationNum > 999) return "Duration cannot exceed 999";
+        return "";
+
+      case "durationUnit":
+        if (!value) return "Duration unit is required";
+        if (!durationUnits.some((unit) => unit.value === value))
+          return "Please select a valid duration unit";
         return "";
 
       case "payment":
@@ -96,9 +114,12 @@ const PostJob: React.FC = () => {
     // Update form data
     setFormData((prev) => ({
       ...prev,
-      // Fix: Don't default to 1 immediately, allow empty string for typing
       [name]:
         name === "peopleNeeded"
+          ? value === ""
+            ? ""
+            : parseInt(value) || ""
+          : name === "durationNumber"
           ? value === ""
             ? ""
             : parseInt(value) || ""
@@ -110,6 +131,22 @@ const PostJob: React.FC = () => {
       setValidationErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
+        return newErrors;
+      });
+    }
+
+    // Also clear the other duration field error if one is fixed
+    if (name === "durationNumber" && validationErrors.durationUnit) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.durationUnit;
+        return newErrors;
+      });
+    }
+    if (name === "durationUnit" && validationErrors.durationNumber) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.durationNumber;
         return newErrors;
       });
     }
@@ -155,7 +192,7 @@ const PostJob: React.FC = () => {
         title: formData.title.trim(),
         description: formData.description.trim(),
         location: formData.location.trim(),
-        duration: formData.duration.trim(),
+        duration: getFormattedDuration(),
         payment: parseFloat(formData.payment),
       };
 
@@ -166,6 +203,18 @@ const PostJob: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Add helper function to get formatted duration
+  const getFormattedDuration = () => {
+    if (!formData.durationNumber || !formData.durationUnit) return "";
+
+    const num = parseInt(formData.durationNumber.toString());
+    const unit = durationUnits.find((u) => u.value === formData.durationUnit);
+
+    if (!unit) return "";
+
+    return `${num} ${num === 1 ? unit.label : unit.plural}`;
   };
 
   return (
@@ -379,32 +428,60 @@ const PostJob: React.FC = () => {
                   </div>
 
                   <div className="group">
-                    <label
-                      htmlFor="duration"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Duration <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <input
-                        type="text"
-                        name="duration"
-                        id="duration"
-                        required
-                        value={formData.duration}
-                        onChange={handleInputChange}
-                        className={`w-full pl-10 pr-3 py-2 bg-white/80 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 ${
-                          validationErrors.duration
-                            ? "border-red-300"
-                            : "border-gray-200"
-                        }`}
-                        placeholder="e.g., 4 hours, Half day, 2 days, 1 week"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Duration Number */}
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        <input
+                          type="number"
+                          name="durationNumber"
+                          min="1"
+                          max="999"
+                          required
+                          value={formData.durationNumber}
+                          onChange={handleInputChange}
+                          className={`w-full pl-10 pr-3 py-2 bg-white/80 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 ${
+                            validationErrors.durationNumber
+                              ? "border-red-300"
+                              : "border-gray-200"
+                          }`}
+                          placeholder="e.g., 2, 8, 15"
+                        />
+                      </div>
+
+                      {/* Duration Unit */}
+                      <div className="relative">
+                        <select
+                          name="durationUnit"
+                          required
+                          value={formData.durationUnit}
+                          onChange={handleInputChange}
+                          className={`w-full px-3 py-2 bg-white/80 border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 ${
+                            validationErrors.durationUnit
+                              ? "border-red-300"
+                              : "border-gray-200"
+                          }`}
+                        >
+                          <option value="">Select a unit</option>
+                          {durationUnits.map((unit) => (
+                            <option key={unit.value} value={unit.value}>
+                              {unit.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                    {validationErrors.duration && (
+                    {validationErrors.durationNumber && (
                       <p className="mt-1 text-sm text-red-600">
-                        {validationErrors.duration}
+                        {validationErrors.durationNumber}
+                      </p>
+                    )}
+                    {validationErrors.durationUnit && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {validationErrors.durationUnit}
                       </p>
                     )}
                   </div>
@@ -416,10 +493,10 @@ const PostJob: React.FC = () => {
                     htmlFor="payment"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Total Payment ($) <span className="text-red-500">*</span>
+                    Total Payment (₹) <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <IndianRupee className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <input
                       type="number"
                       name="payment"
