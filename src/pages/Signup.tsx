@@ -38,6 +38,10 @@ const Signup: React.FC = () => {
   const [emailSuggestions, setEmailSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    length: false,
+    // You can add more requirements later like uppercase, numbers, etc.
+  });
 
   const navigate = useNavigate();
   const { login, loginWithGoogle } = useAuth();
@@ -283,6 +287,20 @@ const Signup: React.FC = () => {
     await sendOTP();
   };
 
+  // Add this useEffect after your existing useEffects
+  useEffect(() => {
+    if (formData.password) {
+      setPasswordRequirements({
+        length: formData.password.length >= 6,
+        // Add more checks here as needed
+      });
+    } else {
+      setPasswordRequirements({
+        length: false,
+      });
+    }
+  }, [formData.password]);
+
   return (
     <div className="min-h-screen bg-orange-50 relative">
       {/* Very subtle background elements */}
@@ -433,6 +451,26 @@ const Signup: React.FC = () => {
                       )}
                     </button>
                   </div>
+
+                  {/* Password Requirements Indicator */}
+                  {formData.password && (
+                    <div className="mt-2 space-y-1">
+                      <div
+                        className={`flex items-center space-x-2 text-sm transition-all duration-200 ${
+                          passwordRequirements.length
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {passwordRequirements.length ? (
+                          <CheckCircle className="h-4 w-4" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4" />
+                        )}
+                        <span>At least 6 characters</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Confirm Password Input */}

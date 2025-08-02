@@ -11,6 +11,7 @@ import {
   Save,
   XCircle,
   CheckCircle,
+  Edit3,
 } from "lucide-react";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -385,13 +386,14 @@ const Profile: React.FC = () => {
                         onChange={handleInputChange}
                         onBlur={() => handleBlur("name")}
                         maxLength={50}
-                        className={`w-full pl-10 pr-3 py-2 bg-white/80 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 ${
+                        className={`w-full pl-10 pr-10 py-2 bg-white/80 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 ${
                           touched.name && !nameValidation.valid
                             ? "border-red-300"
                             : "border-gray-200"
                         }`}
                         placeholder="Your full name"
                       />
+                      <Edit3 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     </div>
                     <ValidationIndicator
                       validation={nameValidation}
@@ -426,31 +428,34 @@ const Profile: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Phone Number <span className="text-red-500">*</span>
                     </label>
-                    <div
-                      className={`phone-input-wrapper ${
-                        touched.phone &&
-                        !phoneValidation.valid &&
-                        phoneValidation.message
-                          ? "phone-input-error"
-                          : ""
-                      }`}
-                    >
-                      <PhoneInput
-                        international
-                        defaultCountry="IN"
-                        value={formData.phone}
-                        onChange={(value) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            phone: value || "",
-                          }))
-                        }
-                        onBlur={handlePhoneBlur}
-                        placeholder="Enter phone number"
-                        smartCaret={true}
-                        limitMaxLength={true}
-                        maxlength={15}
-                      />
+                    <div className="relative">
+                      <div
+                        className={`phone-input-wrapper ${
+                          touched.phone &&
+                          !phoneValidation.valid &&
+                          phoneValidation.message
+                            ? "phone-input-error"
+                            : ""
+                        }`}
+                      >
+                        <PhoneInput
+                          international
+                          defaultCountry="IN"
+                          value={formData.phone}
+                          onChange={(value) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              phone: value || "",
+                            }))
+                          }
+                          onBlur={handlePhoneBlur}
+                          placeholder="Enter phone number"
+                          smartCaret={true}
+                          limitMaxLength={true}
+                          maxlength={15}
+                        />
+                      </div>
+                      <Edit3 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     </div>
                     <ValidationIndicator
                       validation={phoneValidation}
@@ -512,13 +517,14 @@ const Profile: React.FC = () => {
                             onChange={handleInputChange}
                             onBlur={() => handleBlur("bio")}
                             maxLength={300}
-                            className={`w-full pl-10 pr-3 py-2 bg-white/80 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 resize-none ${
+                            className={`w-full pl-10 pr-10 py-2 bg-white/80 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 resize-none ${
                               touched.bio && !bioValidation.valid
                                 ? "border-red-300"
                                 : "border-gray-200"
                             }`}
                             placeholder="Tell others about your experience, skills, and what you bring to the table... (minimum 20 characters)"
                           />
+                          <Edit3 className="absolute right-3 top-3 text-gray-400 h-4 w-4" />
                         </div>
                         <ValidationIndicator
                           validation={bioValidation}
@@ -727,7 +733,10 @@ const Profile: React.FC = () => {
           }
         }
 
-        /* Custom styling for phone input */
+        /* Custom styling for phone input with edit icon */
+        .phone-input-wrapper {
+          position: relative;
+        }
         .phone-input-wrapper .PhoneInput {
           --PhoneInput-color--focus: #f97316;
           --PhoneInputInternationalIconPhone-opacity: 0.8;
@@ -741,7 +750,7 @@ const Profile: React.FC = () => {
           background: rgba(255, 255, 255, 0.8) !important;
           border: 1px solid #e5e7eb !important;
           border-radius: 0.5rem !important;
-          padding: 0.5rem 0.75rem !important;
+          padding: 0.5rem 2rem 0.5rem 0.75rem !important;
           font-size: 0.875rem !important;
           transition: all 0.2s !important;
           outline: none !important;
