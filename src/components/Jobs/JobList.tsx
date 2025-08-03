@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Job } from "../../types";
 import JobCard from "./JobCard";
-import { ChevronDown } from "lucide-react";
+import Select from "react-select";
 
 interface JobListProps {
   jobs: Job[];
@@ -10,6 +10,109 @@ interface JobListProps {
   emptyMessage?: string;
   showFilters?: boolean;
 }
+
+// Custom styles for react-select to match your design
+const selectStyles = {
+  control: (provided: any, state: any) => ({
+    ...provided,
+    backgroundColor: "white",
+    border: state.isFocused ? "2px solid #ea580c" : "1px solid #e5e7eb",
+    borderRadius: "0.5rem",
+    padding: "0.125rem 0.25rem",
+    boxShadow: state.isFocused
+      ? "0 0 0 2px rgba(234, 88, 12, 0.2)"
+      : "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+    "&:hover": {
+      borderColor: state.isFocused ? "#ea580c" : "#e5e7eb",
+      boxShadow: state.isFocused
+        ? "0 0 0 2px rgba(234, 88, 12, 0.2)"
+        : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+    },
+    minHeight: "38px",
+    fontSize: "0.875rem",
+    transition: "all 0.2s ease",
+    "@media (max-width: 640px)": {
+      fontSize: "0.75rem",
+      minHeight: "34px",
+      padding: "0.125rem",
+    },
+  }),
+  placeholder: (provided: any) => ({
+    ...provided,
+    color: "#6b7280",
+    fontSize: "inherit",
+  }),
+  singleValue: (provided: any) => ({
+    ...provided,
+    color: "#374151",
+    fontSize: "inherit",
+  }),
+  menu: (provided: any) => ({
+    ...provided,
+    backgroundColor: "white",
+    border: "1px solid #e5e7eb",
+    borderRadius: "0.5rem",
+    boxShadow:
+      "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+    zIndex: 50,
+  }),
+  option: (provided: any, state: any) => ({
+    ...provided,
+    backgroundColor: state.isFocused
+      ? "#fed7aa"
+      : state.isSelected
+      ? "#ea580c"
+      : "white",
+    color: state.isSelected ? "white" : "#374151",
+    fontSize: "0.875rem",
+    "&:hover": {
+      backgroundColor: "#fed7aa",
+      color: "#374151",
+    },
+    "@media (max-width: 640px)": {
+      fontSize: "0.75rem",
+    },
+  }),
+  dropdownIndicator: (provided: any) => ({
+    ...provided,
+    color: "#ea580c",
+    "&:hover": {
+      color: "#ea580c",
+    },
+  }),
+  clearIndicator: (provided: any) => ({
+    ...provided,
+    color: "#6b7280",
+    "&:hover": {
+      color: "#374151",
+    },
+  }),
+};
+
+// Special styles for pay range dropdown
+const payRangeSelectStyles = {
+  ...selectStyles,
+  control: (provided: any, state: any) => ({
+    ...selectStyles.control(provided, state),
+    background:
+      "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 237, 213, 0.6) 100%)",
+    border: state.isFocused
+      ? "1px solid #ea580c"
+      : "1px solid rgba(234, 88, 12, 0.6)",
+    boxShadow: state.isFocused
+      ? "0 0 0 2px rgba(234, 88, 12, 0.4)"
+      : "0 4px 6px -1px rgba(234, 88, 12, 0.3)",
+    backdropFilter: "blur(4px)",
+    "&:hover": {
+      borderColor: "#f97316",
+      boxShadow: "0 8px 25px -5px rgba(234, 88, 12, 0.4)",
+    },
+  }),
+  dropdownIndicator: (provided: any) => ({
+    ...provided,
+    color: "#ea580c",
+  }),
+};
 
 const JobList: React.FC<JobListProps> = ({
   jobs,
@@ -25,7 +128,7 @@ const JobList: React.FC<JobListProps> = ({
     duration: "",
   });
 
-  // Extract unique values from jobs data
+  // Extract unique values from jobs data and convert to react-select options
   const filterOptions = useMemo(() => {
     const categories = [...new Set(jobs.map((job) => job.category))].sort();
     const locations = [...new Set(jobs.map((job) => job.location))].sort();
@@ -52,10 +155,10 @@ const JobList: React.FC<JobListProps> = ({
     const payRanges = ["₹0 - ₹500", "₹500 - ₹1000", "₹1000 - ₹1500", "₹1500+"];
 
     return {
-      categories,
-      locations,
-      durations: uniqueDurations,
-      payRanges,
+      categories: categories.map((cat) => ({ value: cat, label: cat })),
+      locations: locations.map((loc) => ({ value: loc, label: loc })),
+      durations: uniqueDurations.map((dur) => ({ value: dur, label: dur })),
+      payRanges: payRanges.map((range) => ({ value: range, label: range })),
     };
   }, [jobs]);
 
@@ -112,7 +215,8 @@ const JobList: React.FC<JobListProps> = ({
     });
   }, [jobs, filters]);
 
-  const handleFilterChange = (filterType: string, value: string) => {
+  const handleFilterChange = (filterType: string, selectedOption: any) => {
+    const value = selectedOption ? selectedOption.value : "";
     setFilters((prev) => ({
       ...prev,
       [filterType]:
@@ -130,6 +234,12 @@ const JobList: React.FC<JobListProps> = ({
   };
 
   const activeFiltersCount = Object.values(filters).filter(Boolean).length;
+
+  // Convert current filter values to selected options for react-select
+  const getSelectedOption = (filterType: string, options: any[]) => {
+    const value = filters[filterType as keyof typeof filters];
+    return value ? options.find((opt) => opt.value === value) || null : null;
+  };
 
   return (
     <div className="w-full">
@@ -150,70 +260,70 @@ const JobList: React.FC<JobListProps> = ({
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 mb-4">
             {/* Category Dropdown */}
             <div className="relative">
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange("category", e.target.value)}
-                className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 sm:px-4 sm:py-3 pr-8 sm:pr-10 text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm hover:shadow-md transition-shadow"
-              >
-                <option value="">All Categories</option>
-                {filterOptions.categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
+              <Select
+                options={filterOptions.categories}
+                value={getSelectedOption("category", filterOptions.categories)}
+                onChange={(selectedOption) =>
+                  handleFilterChange("category", selectedOption)
+                }
+                placeholder="All Categories"
+                isSearchable={false}
+                isClearable
+                styles={selectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
             </div>
 
             {/* Duration Dropdown */}
             <div className="relative">
-              <select
-                value={filters.duration}
-                onChange={(e) => handleFilterChange("duration", e.target.value)}
-                className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 sm:px-4 sm:py-3 pr-8 sm:pr-10 text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm hover:shadow-md transition-shadow"
-              >
-                <option value="">All Durations</option>
-                {filterOptions.durations.map((duration) => (
-                  <option key={duration} value={duration}>
-                    {duration}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
+              <Select
+                options={filterOptions.durations}
+                value={getSelectedOption("duration", filterOptions.durations)}
+                onChange={(selectedOption) =>
+                  handleFilterChange("duration", selectedOption)
+                }
+                placeholder="All Durations"
+                isSearchable={false}
+                isClearable
+                styles={selectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
             </div>
 
             {/* Location Dropdown */}
             <div className="relative">
-              <select
-                value={filters.location}
-                onChange={(e) => handleFilterChange("location", e.target.value)}
-                className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-3 py-2 sm:px-4 sm:py-3 pr-8 sm:pr-10 text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent shadow-sm hover:shadow-md transition-shadow"
-              >
-                <option value="">All Locations</option>
-                {filterOptions.locations.map((location) => (
-                  <option key={location} value={location}>
-                    {location}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
+              <Select
+                options={filterOptions.locations}
+                value={getSelectedOption("location", filterOptions.locations)}
+                onChange={(selectedOption) =>
+                  handleFilterChange("location", selectedOption)
+                }
+                placeholder="All Locations"
+                isSearchable
+                isClearable
+                styles={selectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
             </div>
 
             {/* Pay Range Dropdown */}
             <div className="relative">
-              <select
-                value={filters.payRange}
-                onChange={(e) => handleFilterChange("payRange", e.target.value)}
-                className="w-full appearance-none bg-gradient-to-br from-white/90 to-orange-25/60 border border-orange-200/60 rounded-lg px-3 py-2 sm:px-4 sm:py-3 pr-8 sm:pr-10 text-xs sm:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-400 shadow-md shadow-orange-200/30 hover:shadow-lg hover:shadow-orange-200/40 hover:border-orange-300 transition-all duration-200 backdrop-blur-sm"
-              >
-                <option value="">All Pay Ranges</option>
-                {filterOptions.payRanges.map((range) => (
-                  <option key={range} value={range}>
-                    {range}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-orange-500 pointer-events-none" />
+              <Select
+                options={filterOptions.payRanges}
+                value={getSelectedOption("payRange", filterOptions.payRanges)}
+                onChange={(selectedOption) =>
+                  handleFilterChange("payRange", selectedOption)
+                }
+                placeholder="All Pay Ranges"
+                isSearchable={false}
+                isClearable
+                styles={payRangeSelectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
             </div>
           </div>
 
