@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import ApiService from "../../services/api";
 import { workCategories } from "../../data/mockData";
+import Select from "react-select";
 import {
   ArrowLeft,
   IndianRupee,
@@ -11,6 +12,90 @@ import {
   MapPin,
   FileText,
 } from "lucide-react";
+import { tamilNaduCities } from "../../data/mockData";
+
+// Remove duplicates and sort
+const uniqueTamilNaduCities = [...new Set(tamilNaduCities)].sort();
+
+// Convert cities to react-select options
+const cityOptions = uniqueTamilNaduCities.map((city) => ({
+  value: city,
+  label: city,
+}));
+
+// Convert work categories to react-select options
+const categoryOptions = workCategories.map((category) => ({
+  value: category,
+  label: category,
+}));
+
+// Define duration units before using them
+const durationUnits = [
+  { value: "hours", label: "Hour", plural: "Hours" },
+  { value: "days", label: "Day", plural: "Days" },
+  { value: "weeks", label: "Week", plural: "Weeks" },
+  { value: "months", label: "Month", plural: "Months" },
+];
+
+// Convert duration units to react-select options
+const durationUnitOptions = durationUnits.map((unit) => ({
+  value: unit.value,
+  label: unit.label,
+}));
+
+// Custom styles for react-select to match your design
+const selectStyles = {
+  control: (provided: any, state: any) => ({
+    ...provided,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    border: state.isFocused
+      ? "1px solid #ea580c"
+      : state.selectProps.error
+      ? "1px solid #dc2626"
+      : "1px solid #e5e7eb",
+    borderRadius: "0.5rem",
+    padding: "0.125rem",
+    boxShadow: state.isFocused ? "0 0 0 2px rgba(234, 88, 12, 0.2)" : "none",
+    "&:hover": {
+      borderColor: state.isFocused ? "#ea580c" : "#e5e7eb",
+    },
+    minHeight: "42px",
+    paddingLeft: "2.5rem",
+  }),
+  placeholder: (provided: any) => ({
+    ...provided,
+    color: "#9ca3af",
+  }),
+  singleValue: (provided: any) => ({
+    ...provided,
+    color: "#111827",
+  }),
+  menu: (provided: any) => ({
+    ...provided,
+    backgroundColor: "white",
+    border: "1px solid #e5e7eb",
+    borderRadius: "0.5rem",
+    boxShadow:
+      "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+  }),
+  option: (provided: any, state: any) => ({
+    ...provided,
+    backgroundColor: state.isFocused
+      ? "#fed7aa"
+      : state.isSelected
+      ? "#ea580c"
+      : "white",
+    color: state.isSelected ? "white" : "#111827",
+    "&:hover": {
+      backgroundColor: "#fed7aa",
+      color: "#111827",
+    },
+  }),
+};
+
+interface LocationData {
+  city: { value: string; label: string } | null;
+}
 
 const PostJob: React.FC = () => {
   const { user } = useAuth();
@@ -21,10 +106,25 @@ const PostJob: React.FC = () => {
     location: "",
     category: "",
     peopleNeeded: 1 as number | string,
-    durationNumber: "" as number | string, // New field
-    durationUnit: "", // New field
+    durationNumber: "" as number | string,
+    durationUnit: "",
     payment: "",
   });
+
+  const [locationData, setLocationData] = useState<LocationData>({
+    city: null,
+  });
+
+  // Add state for other select components
+  const [categoryData, setCategoryData] = useState<{
+    value: string;
+    label: string;
+  } | null>(null);
+  const [durationUnitData, setDurationUnitData] = useState<{
+    value: string;
+    label: string;
+  } | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState<
@@ -59,8 +159,7 @@ const PostJob: React.FC = () => {
         return "";
 
       case "location":
-        const trimmedLocation = value.trim();
-        if (!trimmedLocation) return "Location is required";
+        if (!value || !value.trim()) return "Location is required";
         return "";
 
       case "category":
@@ -157,6 +256,116 @@ const PostJob: React.FC = () => {
       setValidationErrors((prev) => ({
         ...prev,
         [name]: error,
+      }));
+    }
+  };
+
+  const handleCityChange = (
+    selectedOption: { value: string; label: string } | null
+  ) => {
+    setLocationData({ city: selectedOption });
+
+    // Build location string
+    const locationString = selectedOption
+      ? `${selectedOption.value}, Tamil Nadu, India`
+      : "";
+
+    // Update form data
+    setFormData((prev) => ({
+      ...prev,
+      location: locationString,
+    }));
+
+    // Clear location validation error
+    if (validationErrors.location) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.location;
+        return newErrors;
+      });
+    }
+
+    // Validate location
+    const error = validateField("location", locationString);
+    if (error) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        location: error,
+      }));
+    }
+  };
+
+  const handleCategoryChange = (
+    selectedOption: { value: string; label: string } | null
+  ) => {
+    setCategoryData(selectedOption);
+
+    // Update form data
+    setFormData((prev) => ({
+      ...prev,
+      category: selectedOption ? selectedOption.value : "",
+    }));
+
+    // Clear category validation error
+    if (validationErrors.category) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.category;
+        return newErrors;
+      });
+    }
+
+    // Validate category
+    const error = validateField(
+      "category",
+      selectedOption ? selectedOption.value : ""
+    );
+    if (error) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        category: error,
+      }));
+    }
+  };
+
+  const handleDurationUnitChange = (
+    selectedOption: { value: string; label: string } | null
+  ) => {
+    setDurationUnitData(selectedOption);
+
+    // Update form data
+    setFormData((prev) => ({
+      ...prev,
+      durationUnit: selectedOption ? selectedOption.value : "",
+    }));
+
+    // Clear duration unit validation error
+    if (validationErrors.durationUnit) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.durationUnit;
+        return newErrors;
+      });
+    }
+
+    // Also clear the other duration field error if one is fixed
+    if (validationErrors.durationNumber) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.durationNumber;
+        return newErrors;
+      });
+    }
+
+    // Validate duration unit
+    const error = validateField(
+      "durationUnit",
+      selectedOption ? selectedOption.value : ""
+    );
+    if (error) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        durationUnit: error,
       }));
     }
   };
@@ -327,63 +536,67 @@ const PostJob: React.FC = () => {
                 {/* Location and Category */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="group">
-                    <label
-                      htmlFor="location"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Location <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      City in Tamil Nadu <span className="text-red-500">*</span>
                     </label>
+
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <input
-                        type="text"
-                        name="location"
-                        id="location"
-                        required
-                        value={formData.location}
-                        onChange={handleInputChange}
-                        className={`w-full pl-10 pr-3 py-2 bg-white/80 border rounded-lg placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 ${
-                          validationErrors.location
-                            ? "border-red-300"
-                            : "border-gray-200"
-                        }`}
-                        placeholder="e.g., Downtown Seattle, WA or Remote"
+                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none z-10" />
+                      <Select
+                        options={cityOptions}
+                        value={locationData.city}
+                        onChange={handleCityChange}
+                        placeholder="Type to search cities..."
+                        isSearchable
+                        isClearable
+                        styles={{
+                          ...selectStyles,
+                          control: (provided: any, state: any) => ({
+                            ...selectStyles.control(provided, state),
+                            ...{ error: validationErrors.location },
+                          }),
+                        }}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
                       />
                     </div>
+
                     {validationErrors.location && (
                       <p className="mt-1 text-sm text-red-600">
                         {validationErrors.location}
                       </p>
                     )}
+
+                    {/* Display selected location */}
+                    {formData.location && (
+                      <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-sm text-orange-800">
+                        Selected: {formData.location}
+                      </div>
+                    )}
                   </div>
 
                   <div className="group">
-                    <label
-                      htmlFor="category"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Work Category <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <select
-                        name="category"
-                        id="category"
-                        required
-                        value={formData.category}
-                        onChange={handleInputChange}
-                        className={`w-full px-3 py-2 bg-white/80 border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 ${
-                          validationErrors.category
-                            ? "border-red-300"
-                            : "border-gray-200"
-                        }`}
-                      >
-                        <option value="">Select a category</option>
-                        {workCategories.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
-                          </option>
-                        ))}
-                      </select>
+                      <Select
+                        options={categoryOptions}
+                        value={categoryData}
+                        onChange={handleCategoryChange}
+                        placeholder="Select a category"
+                        isSearchable
+                        isClearable
+                        styles={{
+                          ...selectStyles,
+                          control: (provided: any, state: any) => ({
+                            ...selectStyles.control(provided, state),
+                            ...{ error: validationErrors.category },
+                          }),
+                        }}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                      />
                     </div>
                     {validationErrors.category && (
                       <p className="mt-1 text-sm text-red-600">
@@ -454,24 +667,24 @@ const PostJob: React.FC = () => {
 
                       {/* Duration Unit */}
                       <div className="relative">
-                        <select
-                          name="durationUnit"
-                          required
-                          value={formData.durationUnit}
-                          onChange={handleInputChange}
-                          className={`w-full px-3 py-2 bg-white/80 border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all duration-200 ${
-                            validationErrors.durationUnit
-                              ? "border-red-300"
-                              : "border-gray-200"
-                          }`}
-                        >
-                          <option value="">Select a unit</option>
-                          {durationUnits.map((unit) => (
-                            <option key={unit.value} value={unit.value}>
-                              {unit.label}
-                            </option>
-                          ))}
-                        </select>
+                        <Select
+                          options={durationUnitOptions}
+                          value={durationUnitData}
+                          onChange={handleDurationUnitChange}
+                          placeholder="Select unit"
+                          isSearchable={false}
+                          isClearable
+                          styles={{
+                            ...selectStyles,
+                            control: (provided: any, state: any) => ({
+                              ...selectStyles.control(provided, state),
+                              paddingLeft: "0.75rem", // Remove extra left padding since no icon
+                              ...{ error: validationErrors.durationUnit },
+                            }),
+                          }}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                        />
                       </div>
                     </div>
                     {validationErrors.durationNumber && (
