@@ -7,14 +7,14 @@ export const Footer: React.FC = () => {
         <div className="text-center text-sm text-gray-600">
           © srihari-codes 2025 •{" "}
           {
-            <a
-              href="https://github.com/srihari-codes"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-orange-600 hover:text-orange-800 transition-colors duration-200 font-medium"
-            >
-              Dev Profile
-            </a>
+            // <a
+            //   href="https://github.com/srihari-codes"
+            //   target="_blank"
+            //   rel="noopener noreferrer"
+            //   className="text-orange-600 hover:text-orange-800 transition-colors duration-200 font-medium"
+            // >
+            //   Dev Profile
+            // </a>
           }
         </div>
       </div>
