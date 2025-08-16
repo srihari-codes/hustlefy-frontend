@@ -71,7 +71,7 @@ const JobCard: React.FC<JobCardProps> = ({
           <div className="flex items-center gap-2 text-gray-700 bg-gradient-to-br from-orange-50/80 to-rose-50/60 border border-orange-200/30 backdrop-blur-sm rounded-lg px-2 py-1.5 sm:px-3 sm:py-2 shadow-md shadow-orange-200/40">
             <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600 flex-shrink-0" />
             <span className="font-medium text-xs sm:text-sm">
-              {job.duration} hours
+              {job.duration}
             </span>
           </div>
 

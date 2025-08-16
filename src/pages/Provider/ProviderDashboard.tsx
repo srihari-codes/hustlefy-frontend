@@ -244,7 +244,7 @@ const ProviderDashboard: React.FC = () => {
                         {job.description}
                       </p>
                       <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span>${job.payment}</span>
+                        <span>₹{job.payment}</span>
                         <span>{job.duration}</span>
                         <span>
                           {job.peopleAccepted}/{job.peopleNeeded} filled

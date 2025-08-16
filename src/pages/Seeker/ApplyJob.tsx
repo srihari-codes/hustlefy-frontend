@@ -157,7 +157,7 @@ const ApplyJob: React.FC = () => {
               </div>
               <div className="flex items-center text-gray-600">
                 <IndianRupee className="h-5 w-5 mr-2 text-orange-500" />
-                <span>₹{job.payment} total</span>
+                <span>{job.payment} total</span>
               </div>
               <div className="flex items-center text-gray-600">
                 <Users className="h-5 w-5 mr-2 text-orange-500" />
