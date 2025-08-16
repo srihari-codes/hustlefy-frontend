@@ -4,12 +4,16 @@ import React, {
   useState,
   ReactNode,
   useEffect,
+  useRef,
 } from "react";
 import ApiService from "../services/api";
 import { User, GoogleLoginResponse } from "../types";
 import axios from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
+const TOKEN_TTL_MS =
+  Number(import.meta.env.VITE_TOKEN_TTL_MS ?? import.meta.env.TOKEN_TTL_MS) ||
+  0;
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -51,9 +55,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   });
 
+  // ref to hold scheduled logout timer id
+  const logoutTimerRef = useRef<number | null>(null);
+
+  // helpers to set/clear token with expiry
+  const setTokenWithExpiry = (token: string) => {
+    const expiry = Date.now() + TOKEN_TTL_MS;
+    localStorage.setItem("token", token);
+    localStorage.setItem("tokenExpiry", expiry.toString());
+    scheduleAutoLogout(expiry);
+  };
+
+  const clearTokenAndExpiry = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("tokenExpiry");
+    if (logoutTimerRef.current) {
+      window.clearTimeout(logoutTimerRef.current);
+      logoutTimerRef.current = null;
+    }
+  };
+
+  const scheduleAutoLogout = (expiryTimestamp: number) => {
+    // clear existing timer
+    if (logoutTimerRef.current) {
+      window.clearTimeout(logoutTimerRef.current);
+      logoutTimerRef.current = null;
+    }
+    const msUntilExpiry = expiryTimestamp - Date.now();
+    if (msUntilExpiry <= 0) {
+      // already expired
+      logout();
+      return;
+    }
+    // schedule logout when token expires
+    logoutTimerRef.current = window.setTimeout(() => {
+      logout();
+    }, msUntilExpiry);
+  };
+
   // Run checkAuthStatus on mount
   useEffect(() => {
     checkAuthStatus();
+    // cleanup on unmount
+    return () => {
+      if (logoutTimerRef.current) {
+        window.clearTimeout(logoutTimerRef.current);
+      }
+    };
   }, []);
 
   const login = (user: User) => {
@@ -65,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    clearTokenAndExpiry();
     localStorage.removeItem("user");
     setAuthState({
       isAuthenticated: false,
@@ -96,7 +144,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const token = response.data.data?.token;
       if (user && token) {
         localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("token", token);
+        setTokenWithExpiry(token);
         setAuthState({
           isAuthenticated: true,
           user,
@@ -122,7 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
       if (response.data.user && response.data.token) {
         localStorage.setItem("user", JSON.stringify(response.data.user));
-        localStorage.setItem("token", response.data.token);
+        setTokenWithExpiry(response.data.token);
         setAuthState({
           isAuthenticated: true,
           user: response.data.user,
@@ -146,7 +194,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await ApiService.register(userData);
       const { user, token } = response.data;
 
-      localStorage.setItem("token", token);
+      setTokenWithExpiry(token);
       localStorage.setItem("user", JSON.stringify(user));
       setAuthState({
         isAuthenticated: true,
@@ -162,24 +210,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthState((prev) => ({ ...prev, isAuthLoading: true }));
 
     const token = localStorage.getItem("token");
+    const tokenExpiryStr = localStorage.getItem("tokenExpiry");
     const userStr = localStorage.getItem("user");
 
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        setAuthState({
-          isAuthenticated: true,
-          user,
-          isAuthLoading: false,
-        });
-      } catch {
-        localStorage.removeItem("token");
+    if (token && tokenExpiryStr && userStr) {
+      const expiry = Number(tokenExpiryStr);
+      if (isNaN(expiry) || Date.now() >= expiry) {
+        // expired
+        clearTokenAndExpiry();
         localStorage.removeItem("user");
         setAuthState({
           isAuthenticated: false,
           user: null,
           isAuthLoading: false,
         });
+      } else {
+        try {
+          const user = JSON.parse(userStr);
+          setAuthState({
+            isAuthenticated: true,
+            user,
+            isAuthLoading: false,
+          });
+          scheduleAutoLogout(expiry);
+        } catch {
+          clearTokenAndExpiry();
+          localStorage.removeItem("user");
+          setAuthState({
+            isAuthenticated: false,
+            user: null,
+            isAuthLoading: false,
+          });
+        }
       }
     } else {
       setAuthState({
@@ -207,7 +269,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { data: updatedUser, token: newToken } = response.data;
 
       if (updatedUser && newToken) {
-        localStorage.setItem("token", newToken);
+        setTokenWithExpiry(newToken);
         localStorage.setItem("user", JSON.stringify(updatedUser));
 
         setAuthState((prev) => ({
