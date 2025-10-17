@@ -109,19 +109,20 @@ const Home: React.FC = () => {
         {/* Right Column */}
         <div className="hidden md:block md:float-right md:w-1/2 flex justify-center mt-[70px] md:mt-0">
           <div className="w-[500px] md:w-[600px] h-[400px] md:h-[500px] flex items-center justify-center relative -mt-[80px] overflow-hidden">
-            {/* Background SVG */}
-            <img
-              src="/assets/images/blob-haikei.svg"
-              alt="Background blob"
-              className="absolute inset-0 w-full h-full z-0 object-cover bg-transparent"
-            />
-
-            {/* Man Pointing PNG - Flipped to point left and cropped to show only the man */}
-            <img
-              src="/assets/images/man-pointing.png"
-              alt="Man pointing to the left"
-              className="w-[350px] h-[350px] md:w-[450px] md:h-[450px] object-cover object-center transform scale-x-[-1] translate-y-[20px] relative z-10"
-            />
+            {/* Video replacing both images */}
+            <video
+              src="/assets/videos/hero-video.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              ref={(el) => {
+                if (el) el.muted = true;
+              }}
+              className="w-full h-full object-cover relative z-10"
+            >
+              Your browser does not support the video tag.
+            </video>
           </div>
         </div>
 
