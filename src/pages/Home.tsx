@@ -5,6 +5,7 @@ import JobList from "../components/Jobs/JobList";
 import ApiService from "../services/api";
 import { Job } from "../types";
 import { Search, MapPin, Filter } from "lucide-react";
+import SplashScreen from "../components/splash screen/splashScreen";
 
 const Home: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -15,10 +16,15 @@ const Home: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     fetchJobs();
   }, []);
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+  };
 
   const fetchJobs = async () => {
     try {
@@ -73,6 +79,7 @@ const Home: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-orange-50">
+      {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
       {/* Hero Section */}
       <section className="px-6 py-16 md:py-24 max-w-7xl mx-auto ">
         {/* Left Column */}
